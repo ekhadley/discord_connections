@@ -1,0 +1,9 @@
+# Add this hostname to your existing Cloudflare tunnel config (usually
+# ~/.cloudflared/config.yml) above the catch-all `service: http_status:404`.
+#
+#   - hostname: connections.ekhadley.net
+#     service: http://localhost:8001
+#
+# Then create the DNS record and reload:
+#   cloudflared tunnel route dns <tunnel-name> connections.ekhadley.net
+#   systemctl --user restart website_tunnel.service   # (or whatever runs cloudflared)
