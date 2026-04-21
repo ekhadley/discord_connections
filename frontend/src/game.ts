@@ -69,7 +69,7 @@ export function submit(g: Game): Game {
   }
   const mistakes = g.mistakes + 1
   const done = mistakes >= MAX_MISTAKES ? "lose" : null
-  return { ...g, attempts: [...g.attempts, attempt], mistakes, selected: [], done }
+  return { ...g, attempts: [...g.attempts, attempt], mistakes, done }
 }
 
 export function shuffle(g: Game): Game {

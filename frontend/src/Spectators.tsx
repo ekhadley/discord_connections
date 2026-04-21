@@ -19,8 +19,6 @@ export function Spectators({ players, selfId }: { players: Record<string, Player
 
   return (
     <aside className="spectators">
-      <h3>Others</h3>
-      {others.length === 0 && <div className="none">Nobody else here yet.</div>}
       {others.map((p) => (
         <div key={p.user.id} className="spec">
           <div className="spec-head">

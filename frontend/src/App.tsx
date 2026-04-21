@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react"
-import { connect, type Session } from "./discord"
+import { connect, setActivityStatus, type Session } from "./discord"
 import { Board } from "./Board"
 import { Spectators } from "./Spectators"
 import type { Game, Puzzle } from "./game"
-import { initGame, submit, toggle, shuffle } from "./game"
+import { initGame, submit, toggle, shuffle, LEVEL_EMOJI, MAX_MISTAKES } from "./game"
 import { load, save } from "./storage"
 
 const CLIENT_ID = import.meta.env.VITE_DISCORD_CLIENT_ID as string
@@ -46,7 +46,8 @@ export default function App() {
       const res = await fetch("/api/puzzle")
       const puzzle = (await res.json()) as Puzzle
       const fresh = initGame(puzzle)
-      const saved = load(session.user.id, puzzle.date)
+      const isDev = !location.hostname.endsWith("discordsays.com")
+      const saved = isDev ? null : load(session.user.id, puzzle.date)
       setGame(mergeSaved(fresh, saved))
     })()
   }, [session])
@@ -89,21 +90,31 @@ export default function App() {
     if (!game || !session) return
     save(session.user.id, game)
     sendUpdate()
+    if (session.sdk) {
+      const emojis = game.solved.map((s) => LEVEL_EMOJI[s.level]).join("")
+      const details = `Connections #${game.puzzle.id}`
+      const state =
+        game.done === "win" ? `Solved ${emojis}`
+        : game.done === "lose" ? `Lost · ${emojis || "no groups"}`
+        : `${emojis || "Playing"} · ${game.mistakes}/${MAX_MISTAKES} mistakes`
+      setActivityStatus(session.sdk, details, state)
+    }
   }, [game])
 
-  if (!session) return <div className="loading">Connecting to Discord…</div>
+  if (!session) return <div className="loading">Connecting…</div>
   if (!game) return <div className="loading">Loading puzzle…</div>
 
   return (
     <div className="app">
+      <Spectators players={players} selfId={session.user.id} />
       <Board
         game={game}
         onToggle={(w) => setGame(toggle(game, w))}
         onSubmit={() => setGame(submit(game))}
         onShuffle={() => setGame(shuffle(game))}
         onDeselect={() => setGame({ ...game, selected: [] })}
+        onReorder={(newRemaining) => setGame({ ...game, remaining: newRemaining })}
       />
-      <Spectators players={players} selfId={session.user.id} />
     </div>
   )
 }
