@@ -17,14 +17,39 @@ html, body, #root {
 }
 
 .app {
-  display: grid;
-  grid-template-columns: 280px 1fr 280px;
-  align-items: center;
-  gap: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   padding: 16px;
   max-width: 1400px;
   margin: 0 auto;
   height: 100%;
+}
+
+.tabs {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+.tab {
+  background: #2b2d31;
+  color: #b5bac1;
+  border: none;
+  border-radius: 999px;
+  padding: 6px 18px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.tab:hover { background: #3f4147; color: #f2f3f5; }
+.tab.active { background: #5865f2; color: #fff; }
+
+.game-area {
+  display: grid;
+  grid-template-columns: 280px 1fr 280px;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
 }
 
 .board {
@@ -204,3 +229,61 @@ button.primary:hover:not(:disabled) { background: #4752c4; }
 .pip { width: 14px; height: 14px; border-radius: 3px; display: inline-block; }
 
 .spec-mistakes { display: flex; gap: 4px; }
+
+/* Wordle */
+.wordle-board { align-items: center; }
+.wordle-grid {
+  display: grid;
+  grid-template-rows: repeat(6, 1fr);
+  gap: 5px;
+  max-width: 330px;
+  width: 100%;
+  margin: 0 auto;
+}
+.wordle-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
+.wordle-row.shake { animation: shake 0.5s; }
+.wordle-cell {
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #3a3a3c;
+  font-weight: 800;
+  font-size: 28px;
+  text-transform: uppercase;
+  color: #f2f3f5;
+  user-select: none;
+}
+.wordle-cell.filled { border-color: #565758; }
+.wordle-cell.revealed { border: none; color: #fff; }
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+.keyboard { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; align-self: stretch; }
+.kb-row { display: flex; justify-content: center; gap: 5px; }
+.key {
+  flex: 1;
+  max-width: 42px;
+  min-width: 0;
+  padding: 14px 0;
+  border: none;
+  border-radius: 4px;
+  background: #818384;
+  color: #f2f3f5;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+.key.wide { max-width: 64px; font-size: 11px; }
+.key:hover { filter: brightness(1.15); }
+
+.wordle-mini { display: flex; flex-direction: column; gap: 2px; }
+.wordle-mini-row { display: flex; gap: 2px; }
+.wordle-mini .pip { width: 12px; height: 12px; border-radius: 2px; }
