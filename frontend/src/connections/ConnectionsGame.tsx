@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react"
 import type { Session } from "../discord"
-import { setActivityStatus } from "../discord"
 import { Board } from "./Board"
 import { Spectators } from "./Spectators"
 import type { Game, Puzzle } from "./game"
-import { initGame, submit, toggle, shuffle, LEVEL_EMOJI, MAX_MISTAKES } from "./game"
+import { initGame, submit, toggle, shuffle, revealNext } from "./game"
 import { saveJson, loadJson } from "../storage"
 import { useGameRoom } from "../ws"
 
@@ -53,15 +52,6 @@ export function ConnectionsGame({ session }: { session: Session }) {
       done: game.done,
       remaining: game.remaining,
     })
-    if (session.sdk) {
-      const emojis = game.solved.map((s) => LEVEL_EMOJI[s.level]).join("")
-      const details = `Connections #${game.puzzle.id}`
-      const state =
-        game.done === "win" ? `Solved ${emojis}`
-        : game.done === "lose" ? `Lost · ${emojis || "no groups"}`
-        : `${emojis || "Playing"} · ${game.mistakes}/${MAX_MISTAKES} mistakes`
-      setActivityStatus(session.sdk, details, state)
-    }
   }, [game])
 
   if (!game) return <div className="loading">Loading puzzle…</div>
@@ -76,6 +66,7 @@ export function ConnectionsGame({ session }: { session: Session }) {
         onShuffle={() => setGame(shuffle(game))}
         onDeselect={() => setGame({ ...game, selected: [] })}
         onReorder={(newRemaining) => setGame({ ...game, remaining: newRemaining })}
+        onReveal={() => setGame(revealNext(game))}
       />
     </>
   )

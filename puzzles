@@ -1,0 +1,61 @@
+#!/bin/bash
+
+project="/home/ek/wgmn/discord_connections"
+service="puzzles.service"
+
+case "$1" in
+    kill|stop)
+        systemctl --user stop "$service"
+        systemctl --user status "$service" --no-pager
+        ;;
+    restart)
+        systemctl --user restart "$service"
+        sleep 1
+        systemctl --user status "$service" --no-pager
+        ;;
+    logs)
+        journalctl --user -u "$service" -f
+        ;;
+    build)
+        cd "$project/backend" && uv sync && cd "$project/frontend" && npm ci && npm run build
+        ;;
+    dev)
+        systemctl --user stop "$service"
+        tmux kill-session -t puzzles-dev 2>/dev/null
+        tmux new-session  -d -s puzzles-dev -n backend  "cd $project/backend  && uv run uvicorn main:app --host 127.0.0.1 --port 8001 --reload"
+        tmux new-window      -t puzzles-dev -n frontend "cd $project/frontend && npm run dev -- --host 0.0.0.0"
+        ip=$(ip -4 addr show | awk '/inet / && $2 !~ /^127/ {sub(/\/.*/,"",$2); print $2; exit}')
+        echo "Dev servers started in tmux session 'puzzles-dev'."
+        echo "  frontend: http://$ip:5173"
+        echo "  attach:   tmux attach -t puzzles-dev"
+        echo "  stop:     $0 dev-stop"
+        ;;
+    dev-stop)
+        tmux kill-session -t puzzles-dev 2>/dev/null
+        systemctl --user start "$service"
+        sleep 1
+        systemctl --user status "$service" --no-pager
+        ;;
+    "")
+        if systemctl --user is-active --quiet "$service"; then
+            echo "Service is running. Status:"
+            systemctl --user status "$service" --no-pager
+        else
+            echo "Service is not running. Starting..."
+            systemctl --user start "$service"
+            sleep 1
+            systemctl --user status "$service" --no-pager
+        fi
+        ;;
+    *)
+        echo "Usage: $0 [kill|restart|logs|build|dev|dev-stop]"
+        echo "  (no args)  Start service if stopped, show status if running"
+        echo "  kill       Stop the systemd service"
+        echo "  restart    Restart the service"
+        echo "  logs       Tail journalctl -f"
+        echo "  build      uv sync + npm ci + npm run build"
+        echo "  dev        Stop prod, run uvicorn+vite in tmux (LAN-accessible)"
+        echo "  dev-stop   Kill dev tmux session, restart prod service"
+        exit 1
+        ;;
+esac

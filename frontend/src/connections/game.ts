@@ -76,6 +76,16 @@ export function shuffle(g: Game): Game {
   return { ...g, remaining: seededShuffle(g.remaining, Date.now() & 0x7fffffff) }
 }
 
+export function revealNext(g: Game): Game {
+  if (g.done !== "lose") return g
+  const solvedLevels = new Set(g.solved.map((s) => s.level))
+  const next = g.puzzle.answers.find((a) => !solvedLevels.has(a.level))
+  if (!next) return g
+  const solved = [...g.solved, { level: next.level, group: next.group, members: next.members }]
+  const remaining = g.remaining.filter((w) => !next.members.includes(w))
+  return { ...g, solved, remaining, selected: [] }
+}
+
 export function oneAway(att: Attempt): boolean {
   if (att.correct) return false
   const counts = new Map<number, number>()

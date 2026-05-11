@@ -1,5 +1,5 @@
 [Unit]
-Description=Discord Connections Activity backend
+Description=Discord Puzzles Activity backend
 After=network.target
 
 [Service]

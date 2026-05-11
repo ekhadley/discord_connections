@@ -1,19 +1,27 @@
 import { useEffect, useState } from "react"
 import type { Session } from "../discord"
-import { setActivityStatus } from "../discord"
 import { Board } from "./Board"
 import { Spectators } from "./Spectators"
-import type { Game, WordlePuzzle } from "./game"
-import { initGame, colorsFor, MAX_GUESSES } from "./game"
+import type { Game, WordlePuzzle, WordleSettings } from "./game"
+import { initGame, colorsFor, computeStats, avgBits, DEFAULT_SETTINGS } from "./game"
+import { ANSWERS } from "./words"
 import { saveJson, loadJson } from "../storage"
 import { useGameRoom } from "../ws"
 
 const storageKey = (userId: string, date: string) => `wordle:${userId}:${date}`
+const SETTINGS_KEY = "wordle:settings"
 
 type Saved = { guesses: string[]; done: "win" | "lose" | null }
 
 export function WordleGame({ session }: { session: Session }) {
   const [game, setGame] = useState<Game | null>(null)
+  const [settings, setSettings] = useState<WordleSettings>(
+    () => loadJson<WordleSettings>(SETTINGS_KEY) ?? DEFAULT_SETTINGS,
+  )
+
+  useEffect(() => {
+    saveJson(SETTINGS_KEY, settings)
+  }, [settings])
 
   useEffect(() => {
     ;(async () => {
@@ -39,13 +47,29 @@ export function WordleGame({ session }: { session: Session }) {
       guesses: game.guesses,
       done: game.done,
     })
-    if (session.sdk) {
-      const details = `Wordle #${game.puzzle.id}`
-      const state =
-        game.done === "win" ? `Solved ${game.guesses.length}/${MAX_GUESSES}`
-        : game.done === "lose" ? `Lost ${MAX_GUESSES}/${MAX_GUESSES}`
-        : `${game.guesses.length}/${MAX_GUESSES} guesses`
-      setActivityStatus(session.sdk, details, state)
+    if (game.done === "win" && session.guildId) {
+      const reportedKey = `wordle:reported:${session.user.id}:${game.puzzle.print_date}`
+      if (!localStorage.getItem(reportedKey)) {
+        const stats = computeStats(game, ANSWERS)
+        const body = {
+          guild_id: session.guildId,
+          puzzle_date: game.puzzle.print_date,
+          user_id: session.user.id,
+          username: session.user.global_name ?? session.user.username,
+          guesses: game.guesses.length,
+          avg_bits: stats ? avgBits(game, stats) : null,
+        }
+        fetch("/api/wordle/solve", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        })
+          .then((r) => {
+            if (!r.ok) throw new Error(`solve report failed: ${r.status}`)
+            localStorage.setItem(reportedKey, "1")
+          })
+          .catch((e) => console.error("solve report failed", e))
+      }
     }
   }, [game])
 
@@ -54,7 +78,7 @@ export function WordleGame({ session }: { session: Session }) {
   return (
     <>
       <Spectators players={players} selfId={session.user.id} />
-      <Board game={game} onChange={setGame} />
+      <Board game={game} onChange={setGame} settings={settings} onSettingsChange={setSettings} />
     </>
   )
 }

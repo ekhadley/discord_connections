@@ -2,11 +2,7 @@ import { DiscordSDK } from "@discord/embedded-app-sdk"
 
 export type User = { id: string; username: string; avatar: string | null; global_name?: string | null }
 
-export type Session = { sdk: DiscordSDK | null; user: User; instanceId: string }
-
-export function setActivityStatus(sdk: DiscordSDK, details: string, state: string) {
-  return sdk.commands.setActivity({ activity: { details, state } })
-}
+export type Session = { sdk: DiscordSDK | null; user: User; instanceId: string; guildId: string | null }
 
 const isDiscordIframe = () => location.hostname.endsWith("discordsays.com")
 
@@ -27,7 +23,7 @@ async function connectDiscord(clientId: string): Promise<Session> {
   })
   const { access_token } = await tokenRes.json()
   const auth = await sdk.commands.authenticate({ access_token })
-  return { sdk, user: auth.user as User, instanceId: sdk.instanceId }
+  return { sdk, user: auth.user as User, instanceId: sdk.instanceId, guildId: sdk.guildId }
 }
 
 function randomSnowflake(): string {
@@ -61,6 +57,7 @@ function devSession(): Session {
     sdk: null,
     user: { id, username, avatar: null, global_name: username },
     instanceId: `dev-${room}`,
+    guildId: "dev-guild",
   }
 }
 

@@ -1,6 +1,6 @@
 import type { Game } from "./game"
 import { LEVEL_COLORS, MAX_MISTAKES, levelOf, oneAway, shareText } from "./game"
-import { useLayoutEffect, useRef, useState } from "react"
+import { useEffect, useLayoutEffect, useRef, useState } from "react"
 
 type Props = {
   game: Game
@@ -9,6 +9,7 @@ type Props = {
   onShuffle: () => void
   onDeselect: () => void
   onReorder: (newRemaining: string[]) => void
+  onReveal: () => void
 }
 
 type Rect = { left: number; top: number; width: number; height: number }
@@ -19,12 +20,13 @@ type Flight = {
   displacedWords: string[]
   rects: Map<string, Rect>
   phase: Phase
+  isReveal: boolean
 }
 
 const WIGGLE_MS = 640
 const SWAP_MS = 1000
 
-export function Board({ game, onToggle, onSubmit, onShuffle, onDeselect, onReorder }: Props) {
+export function Board({ game, onToggle, onSubmit, onShuffle, onDeselect, onReorder, onReveal }: Props) {
   const { remaining, selected, solved, mistakes, done, attempts } = game
   const last = attempts[attempts.length - 1]
   const [copied, setCopied] = useState(false)
@@ -57,8 +59,7 @@ export function Board({ game, onToggle, onSubmit, onShuffle, onDeselect, onReord
     else tileRefs.current.delete(word)
   }
 
-  const startCorrect = (level: number) => {
-    const words = [...selected]
+  const animateMerge = (level: number, words: string[], onComplete: () => void, isReveal: boolean) => {
     const top4 = remaining.slice(0, 4)
     const displaced = top4.filter((w) => !words.includes(w))
     const selectedNotInTop = words
@@ -91,6 +92,7 @@ export function Board({ game, onToggle, onSubmit, onShuffle, onDeselect, onReord
       displacedWords: displaced,
       rects: new Map(startRects),
       phase: "wiggle",
+      isReveal,
     })
 
     const gridRectSnapshot = gridRef.current!.getBoundingClientRect()
@@ -129,9 +131,27 @@ export function Board({ game, onToggle, onSubmit, onShuffle, onDeselect, onReord
     const commitAt = WIGGLE_MS + (needsSwap ? SWAP_MS : 0)
     setTimeout(() => {
       setFlight(null)
-      onSubmit()
+      onComplete()
     }, commitAt)
   }
+
+  const startCorrect = (level: number) => animateMerge(level, [...selected], onSubmit, false)
+
+  const startReveal = (level: number) => {
+    const group = game.puzzle.answers.find((a) => a.level === level)!
+    const groupWords = group.members.filter((w) => remaining.includes(w))
+    if (groupWords.length !== 4) return
+    animateMerge(level, groupWords, onReveal, true)
+  }
+
+  useEffect(() => {
+    if (done !== "lose" || busy) return
+    const solvedLevels = new Set(solved.map((s) => s.level))
+    const nextLevel = [0, 1, 2, 3].find((l) => !solvedLevels.has(l))
+    if (nextLevel === undefined) return
+    const t = setTimeout(() => startReveal(nextLevel), 600)
+    return () => clearTimeout(t)
+  }, [done, busy, solved.length])
 
   const startWrong = () => {
     setWiggling(true)
@@ -180,14 +200,17 @@ export function Board({ game, onToggle, onSubmit, onShuffle, onDeselect, onReord
           const hidden = hiddenWords.has(word)
           const bounceIdx = bouncingOrder.indexOf(word)
           const bouncing = bounceIdx >= 0
+          const revealTinted =
+            flight?.isReveal && flight.phase === "wiggle" && flight.selectedInOrder.includes(word)
           return (
             <button
               key={word}
               ref={(el) => setTileRef(word, el)}
-              className={`tile ${isSelected ? "selected" : ""} ${wiggling && isSelected ? "wiggle" : ""} ${bouncing ? "bounce" : ""}`}
+              className={`tile ${isSelected ? "selected" : ""} ${wiggling && isSelected ? "wiggle" : ""} ${bouncing ? "bounce" : ""} ${revealTinted ? "reveal-tint" : ""}`}
               style={{
                 ...(hidden ? { visibility: "hidden" } : {}),
                 ...(bouncing ? { animationDelay: `${bounceIdx * 80}ms` } : {}),
+                ...(revealTinted ? { background: LEVEL_COLORS[flight!.level], color: "#1e1f22" } : {}),
               }}
               onClick={() => onToggle(word)}
               disabled={!!done || busy}
@@ -215,7 +238,7 @@ export function Board({ game, onToggle, onSubmit, onShuffle, onDeselect, onReord
         </div>
       )}
 
-      {done && (
+      {done && solved.length === 4 && !busy && (
         <div className="end">
           <div className="end-title">{done === "win" ? "Solved!" : "Out of guesses."}</div>
           <button onClick={copyShare}>{copied ? "Copied!" : "Copy result"}</button>
