@@ -433,3 +433,125 @@ button.primary:hover:not(:disabled) { background: #4752c4; }
 .wordle-mini { display: flex; flex-direction: column; gap: 2px; }
 .wordle-mini-row { display: flex; gap: 2px; }
 .wordle-mini .pip { width: 12px; height: 12px; border-radius: 2px; }
+
+/* Mobile / narrow viewports */
+@media (max-width: 720px) {
+  .app {
+    padding: 8px;
+    gap: 8px;
+  }
+
+  .tabs { gap: 6px; }
+  .tab { padding: 5px 14px; font-size: 13px; }
+
+  .game-area {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .board {
+    flex: 0 0 auto;
+    min-height: 0;
+    align-items: center;
+    width: 100%;
+  }
+
+  .spectators {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    gap: 10px;
+    flex: 0 0 auto;
+    padding-bottom: 4px;
+    scrollbar-width: thin;
+  }
+  .spectators:empty { display: none; }
+  .spec {
+    flex: 0 0 auto;
+    margin-bottom: 0;
+    padding: 6px 10px 6px 0;
+    border-bottom: none;
+    border-right: 1px solid #3f4147;
+    min-width: 0;
+  }
+  .spec:last-child { border-right: none; padding-right: 0; }
+  .spec-head { margin-bottom: 4px; gap: 6px; }
+  .spec-head img { width: 20px; height: 20px; }
+  .spec-head .name {
+    font-size: 12px;
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .spec-head .badge { font-size: 9px; padding: 1px 5px; }
+  .wordle-mini .pip { width: 8px; height: 8px; }
+  .pip { width: 11px; height: 11px; }
+
+  /* Connections board */
+  .grid { gap: 6px; }
+  .tile {
+    border-radius: 12px;
+    font-size: 13px;
+    letter-spacing: 0;
+    padding: 0 4px;
+    aspect-ratio: 1.5 / 1;
+    word-break: break-word;
+  }
+  .solved-row { border-radius: 12px; padding: 6px 8px; }
+  .solved-title { font-size: 14px; }
+  .solved-members { font-size: 13px; margin-top: 2px; }
+  .mistakes { font-size: 12px; justify-content: center; }
+  .controls { flex-wrap: wrap; gap: 6px; }
+  .controls button { padding: 7px 14px; font-size: 13px; }
+
+  /* Wordle board */
+  .wordle-header {
+    max-width: 100%;
+    padding: 0 4px;
+  }
+  .puzzle-meta { font-size: 11px; }
+  .wordle-grid {
+    max-width: min(82vw, 320px);
+    gap: 4px;
+  }
+  .wordle-row { gap: 4px; }
+  .wordle-cell { font-size: 22px; border-width: 2px; }
+  .wordle-annotation { display: none; }
+
+  .keyboard {
+    margin-top: 8px;
+    gap: 5px;
+    width: 100%;
+  }
+  .kb-row { gap: 4px; }
+  .key {
+    max-width: none;
+    padding: 14px 0;
+    font-size: 16px;
+    border-radius: 4px;
+  }
+  .key.wide { max-width: none; flex: 1.4; font-size: 12px; }
+  .key.key-back svg { width: 22px; height: 22px; }
+
+  .end-title { font-size: 16px; }
+  .end-summary { font-size: 12px; }
+}
+
+@media (max-width: 380px) {
+  .tile { font-size: 11px; border-radius: 10px; }
+  .wordle-cell { font-size: 18px; }
+  .key { font-size: 14px; padding: 12px 0; }
+  .key.wide { font-size: 11px; }
+}
+
+@media (max-height: 700px) and (max-width: 720px) {
+  .wordle-grid { max-width: min(60vh, 320px); }
+}
